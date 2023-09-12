@@ -7,27 +7,31 @@ import com.simplifiedpicpay.repositories.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@Service
 public class TransactionService {
 
     @Autowired
     private UserService userService;
     @Autowired
     private TransactionRepository repository;
-
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private NotificationService notificationService;
 
     //  This method here, when the User makes the post requisition,
     //  sending the data of transaction, I will receive a payload and
     //  the TransactionDTO class will be the responsible to pass the necessary
     //  information to this method
-    public void createTransaction(TransactionDTO transaction) throws Exception {
+
+    public Transaction createTransaction(TransactionDTO transaction) throws Exception {
 
         User sender = this.userService.findUserById(transaction.senderId());
         User receiver = this.userService.findUserById(transaction.receiverId());
@@ -50,6 +54,10 @@ public class TransactionService {
         this.repository.save(newTransaction);
         this.userService.saveUser(sender);
         this.userService.saveUser(receiver);
+        this.notificationService.sendNotification(sender, "Transaction was successfully made");
+        this.notificationService.sendNotification(receiver, "Transaction was successfully received");
+
+        return newTransaction;
     }
 
     public boolean authorizeTransaction(User sender, BigDecimal value) {
